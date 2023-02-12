@@ -21,13 +21,33 @@ def drawLine(img, left_deviation, right_deviation):
     cv2.line(img, (320, 400), (turn, 400), (255,0,0),3)
     return turn
 
+def toHSV(img):
+     img_copy = img.copy()
+     img_HSV = cv2.cvtColor(img_copy, cv2.COLOR_BGR2HSV)
+     return img_HSV
+
+def getHsvMask(img):
+     h_min = cv2.getTrackbarPos('HUE Min', 'TrackerBar')
+     h_max = cv2.getTrackbarPos('HUE Max', 'TrackerBar')
+     s_min = cv2.getTrackbarPos('SAT Min', 'TrackerBar')
+     s_max = cv2.getTrackbarPos('SAT Max', 'TrackerBar')
+     v_min = cv2.getTrackbarPos('VALUE Min', 'TrackerBar')
+     v_max = cv2.getTrackbarPos('VALUE Max', 'TrackerBar')
+     lowerWhite = np.array([h_min, s_min, v_min])
+     upperWhite = np.array([h_max, s_max, v_max])
+     maskWhite = cv2.inRange(img, lowerWhite, upperWhite)
+
+     return maskWhite
+
 def calTurn(img):
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    kernel_size = 3
-    img = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
-    low_threshold = 75
-    high_threshold = 150
-    img = cv2.Canny(img, low_threshold, high_threshold)
+#     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+#     kernel_size = 3
+#     img = cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+#     low_threshold = 75
+#     high_threshold = 150
+#     img = cv2.Canny(img, low_threshold, high_threshold)
+    img_HSV = toHSV(img)
+    HSV_mask = getHsvMask(img_HSV)
     
     left_deviation = 0
     for i in range(300,0,-1):
