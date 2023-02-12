@@ -4,6 +4,50 @@ sys.path.append("/usr/local/lib/python3.8/site-packages")
 import cv2
 import serial
 
+def drawpoint(img, points):
+     picture = img
+     for i in range(4):
+          cv2.circle(picture, (int(points[i][0]), int(points[i][1])), 15, (0, 0, 255), cv2.FILLED)
+     
+     return picture
+
+def passFunction(x):
+     pass
+
+def initializeTrackerBar(img):
+     windowName = 'TrackerBar'
+     cv2.namedWindow(windowName)
+     cv2.resizeWindow(windowName, 640, 480)
+     cv2.createTrackbar('Width Top', windowName, 200, img.shape[1]//2, passFunction)
+     cv2.createTrackbar('Height Top', windowName, 10, img.shape[0], passFunction)
+     cv2.createTrackbar('Width Bottom', windowName, 200, img.shape[1]//2, passFunction)
+     cv2.createTrackbar('Height Bottom', windowName, 100, img.shape[0], passFunction)
+     cv2.createTrackbar('HUE Min', windowName, 0, 255, passFunction)
+     cv2.createTrackbar('HUE Max', windowName, 255, 255, passFunction)
+     cv2.createTrackbar('SAT Min', windowName, 0, 255, passFunction)
+     cv2.createTrackbar('SAT Max', windowName, 255, 255, passFunction)
+     cv2.createTrackbar('VALUE Min', windowName, 0, 255, passFunction)
+     cv2.createTrackbar('VALUE Max', windowName, 255, 255, passFunction)
+
+def ValTrackers(img):
+     windowName = 'TrackerBar'
+     widthTop = 0#cv2.getTrackbarPos('Width Top', windowName) #0
+     heightTop = 130#cv2.getTrackbarPos('Height Top', windowName)# 130
+     widthBottom = 0#cv2.getTrackbarPos('Width Bottom', windowName) #0
+     heightBottom = 250#cv2.getTrackbarPos('Height Bottom', windowName)#250
+
+     points = np.float32([(widthBottom, heightBottom), (widthTop, heightTop), (img.shape[1] - widthTop, heightTop), (img.shape[1] - widthBottom, heightBottom)])
+     return points
+
+def getROI(img):
+     height = img.shape[0]
+     width = img.shape[1]
+     triangle = np.array([ValTrackers(img)], dtype=np.int32)
+     black_img = np.zeros_like(img)
+     mask = cv2.fillPoly(black_img, triangle, 255)
+     masked_img = cv2.bitwise_and(img, mask)
+     return masked_img
+
 def map(turn):
     return int((turn - 0) * (120 - 0) / (25 - 0))
 
@@ -74,7 +118,9 @@ def getLane(frame):
     img_HSV = toHSV(frame.copy())
     img = getHsvMask(img_HSV)
     edges = canny(img.copy())
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 30,minLineLength=20,maxLineGap=10)
+    img_roi = getROI(edges)
+    cv2.imshow('roi', img_roi)
+    lines = cv2.HoughLinesP(img_roi, 1, np.pi / 180, 30,minLineLength=20,maxLineGap=10)
     try:
         for line in lines:
             # newlines1 = lines[:, 0, :]
@@ -114,17 +160,19 @@ def main():
     stopbits=serial.STOPBITS_ONE,
     )
     
-    cap = cv2.VideoCapture(-1)
+    cap = cv2.VideoCapture(1)
     width = 48
     height = 64
     turn_list = []
+    if not cap.isOpened():
+          print("Cannot open camera")
+          exit()
+    ret, frame = cap.read()
+    # initializeTrackerBar(frame)
     while True:
         ret, frame = cap.read()
-        # frame = cv2.resize(frame, (64, 48))
-        # print(frame.shape[0], frame.shape[1])
         if ret:
             turn_list.append(getLane(frame))
-            # cv2.imshow('video',frame)
             if len(turn_list) >= 6 :
                 turn = sum(turn_list) / len(turn_list)
                 turn_list.clear()
@@ -138,9 +186,9 @@ def main():
                     serial_port.open()
                     msg = '0 0'
                     if turn > 0:
-                        msg = str(int(120 - map(turn) + 10)) + '&120\n'
+                        msg = str(int(120 - map(turn))) + '&120\n'
                     elif turn < 0:
-                        msg = '120&' + str(int(120 + map(turn)- 10)) + '\n'
+                        msg = '120&' + str(int(120 + map(turn))) + '\n'
                     else:
                         msg = '120&120\n'
                     serial_port.write(msg.encode())
