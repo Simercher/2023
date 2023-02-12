@@ -5,7 +5,7 @@ import cv2
 import serial
 
 def map(turn):
-    return (turn - 32) * (120 - 0) / (40 - 32)
+    return int((turn - 0) * (120 - 0) / (25 - 0))
 
 def drawLine(img, left_deviation, right_deviation):
     cv2.line(img, (0, 10), (30, 10), (0,255,0),3)
@@ -114,7 +114,7 @@ def main():
     stopbits=serial.STOPBITS_ONE,
     )
     
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(-1)
     width = 48
     height = 64
     turn_list = []
@@ -128,15 +128,19 @@ def main():
             if len(turn_list) >= 6 :
                 turn = sum(turn_list) / len(turn_list)
                 turn_list.clear()
+                if turn > 25:
+                    turn = 25
+                elif turn < -25:
+                    turn = -25
                 print(turn)
                 try:
                     # Send a message to the Arduino
                     serial_port.open()
                     msg = '0 0'
-                    if turn > 32:
-                        msg = str(int(120 - map(turn))) + '&120\n'
-                    elif turn < 32:
-                        msg = '120&' + str(int(120 + map(turn))) + '\n'
+                    if turn > 0:
+                        msg = str(int(120 - map(turn) + 10)) + '&120\n'
+                    elif turn < 0:
+                        msg = '120&' + str(int(120 + map(turn)- 10)) + '\n'
                     else:
                         msg = '120&120\n'
                     serial_port.write(msg.encode())
