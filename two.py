@@ -3,7 +3,12 @@ import cv2
 import serial
 
 def map(turn):
-    return (turn - 320)**2
+  if turn > 320:
+    return (turn - 320)/17**2
+  elif turn < 320:
+    return -(turn - 320)/17**2
+  else:
+    return 0
 
 def main(img):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
@@ -40,7 +45,7 @@ def main(img):
     turn = int((right_deviation + left_deviation)/2)
     cv2.line(img, (320, 400), (turn, 400), (255,0,0),3)
 
-    return img, turn
+    return img, map(turn)
 
 cap = cv2.VideoCapture(0)
 width = 480
@@ -63,16 +68,15 @@ while True:
         try:
             # Send a message to the Arduino
             serial_port.open()
-            turn = map(turn)
-            if turn >= 120:
-              turn = 120
-            elif turn <= -120:
-              turn = -120
+            if turn >= 100:
+              turn = 100
+            elif turn <= -100:
+              turn = -100
             msg = '0 0'
             if turn > 0:
-                msg = str(int(120 - map(turn))) + '&120\n'
+                msg = str(int(120 - turn)) + '&120\n'
             elif turn < 0:
-                msg = '120&' + str(int(120 + map(turn))) + '\n'
+                msg = '120&' + str(int(120 + turn)) + '\n'
             else:
                 msg = '120&120\n'
             serial_port.write(msg.encode())
