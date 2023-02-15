@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 import serial
 
+def map(turn):
+    return (turn - 320)**2
+
 def main(img):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
@@ -58,7 +61,7 @@ while True:
 
         cv2.imshow('video',frame)
         try:
-                    # Send a message to the Arduino
+            # Send a message to the Arduino
             serial_port.open()
             msg = '0 0'
             if turn > 0:
