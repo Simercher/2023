@@ -63,6 +63,11 @@ while True:
         try:
             # Send a message to the Arduino
             serial_port.open()
+            turn = map(turn)
+            if turn >= 120:
+              turn = 120
+            elif turn <= -120:
+              turn = -120
             msg = '0 0'
             if turn > 0:
                 msg = str(int(120 - map(turn))) + '&120\n'
