@@ -1,6 +1,5 @@
 class PID_VelocityControl():
-    def __init__(self, kp = 0, ki = 0, kd = 0, d_time = 100, max_velocity = 100, min_velocity = 0, max_PID = 170, min_PID = 0):
-        # self.encoder = 0
+    def __init__(self, kp = 0, ki = 0, kd = 0, d_time = 50, max_velocity = 75, min_velocity = 0, max_PID = 75, min_PID = 0):
         self.kp = kp
         self.ki = ki
         self.kd = kd
@@ -22,7 +21,6 @@ class PID_VelocityControl():
         self.I += self.ki * (self.error * self.d_time)
         self.D = self.kd * ((self.error - self.pre_error) / self.d_time)
         self.pre_error = self.error
-
         self.PID = self.P + self.I + self.D
     def setVelocity(self):
         self.convertPID()
