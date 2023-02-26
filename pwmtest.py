@@ -1,55 +1,62 @@
-import sys
-sys.path.append("/usr/local/lib/python3.8/site-packages")
-import cv2
-import time
-import utilis
+import threading
 import Jetson.GPIO as GPIO
 import serial
-PWM_PIN = 32
-HIGH_PIN = 37
-LOWER_PIN = 35
-ENCODER_R_A = 21
-ENCODER_R_B = 22
+from PID_VelocityControl import PID_VelocityControl
+R_PWM_PIN = 32
+R_HIGH_PIN = 37
+R_LOWER_PIN = 35
+L_PWM_PIN = 33
+L_HIGH_PIN = 36
+L_LOWER_PIN = 38
 
-
-def main():
-    ser = serial.Serial(port="/dev/ttyUSB0",
+ser = serial.Serial(port="/dev/ttyUSB0",
         baudrate=115200,
         bytesize=serial.EIGHTBITS,
         parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE,
-        timeout = 0.009,
+        timeout = 0.11,
         )
-    global counter
+
+
+def main():
+    global ser
     # Pin Setup:
     # Board pin-numbering scheme
     GPIO.setmode(GPIO.BOARD)
     # set pin as an output pin with optional initial state of HIGH
-    GPIO.setup(HIGH_PIN, GPIO.OUT, initial=GPIO.HIGH)
-    GPIO.setup(LOWER_PIN, GPIO.OUT, initial=GPIO.LOW)
-    GPIO.setup(PWM_PIN, GPIO.OUT, initial=GPIO.HIGH)
-    p = GPIO.PWM(PWM_PIN, 50)
-    val = 50
-    incr = 5
-    p.start(val)
+    GPIO.setup(R_HIGH_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(R_LOWER_PIN, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(R_PWM_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(L_HIGH_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(L_LOWER_PIN, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(L_PWM_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    rp = GPIO.PWM(R_PWM_PIN, 50)
+    r_motor = PID_VelocityControl(kp = 0.35, ki = 0.000003, kd = 100)
+    rp.start(0)
     R_encoder = 0
+    #ser.open()
     print("PWM running. Press CTRL+C to exit.")
-    try:
-        while True:
+    while True:
+        try:
+        
+            #target = input()
             R_encoder = ser.read_all()
             if R_encoder:
                 R_encoder = int(R_encoder.decode())
                 print(R_encoder)
-            pass
-    except KeyboardInterrupt:
-        print("interrupt")
-    finally:
-        #p.stop()
+                #r_motor.calPID(100, R_encoder)
+                #velocity = r_motor.setVelocity()
+                #rp.ChangeDutyCycle(velocity)
+        #except KeyboardInterrupt:
+        #    print("interrupt")
+        except serial.SerialException as e:
+            print(e)
+        except ValueError as e:
+            print(e)
+    p.stop()
         # GPIO.remove_event_detect(ENCODER_R_A)
-        GPIO.cleanup()
-        ser.close()
-    
-def map()
-    
+    GPIO.cleanup()
+    ser.close()
+   
 if __name__ == '__main__':
     main()
