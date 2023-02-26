@@ -3,8 +3,7 @@ import serial
 from PID_VelocityControl import PID_VelocityControl
 
 class Motor():
-    def __init__(self, serial_port, Pins):
-        self.serial_port = serial_port 
+    def __init__(self, Pins):
         self.pins = Pins
         self.pid = PID_VelocityControl(kp = 0.35, ki = 0.000003, kd = 100)
         GPIO.setmode(GPIO.BOARD)
@@ -15,22 +14,10 @@ class Motor():
         self.pwm.start(0)
         self.encoder = 0
         self.velocity = 0
-    def setSpeed(self):
-        self.setEncoder()
+    def setSpeed(self, encoder):
+        self.encoder = encoder
         self.pid.calPID(100, self.encoder)
         self.velocity = self.pid.setVelocity()
         self.pwm.ChangeDutyCycle(self.velocity)
-    def setEncoder(self):
-        try:
-            self.encoder = self.serial_port.read_all()
-            if self.encoder:
-                self.encoder = int(self.encoder.decode())
-                # print(R_encoder)
-        except serial.SerialException as e:
-            print(e)
-        except ValueError as e:
-            print(e)
     def __del__(self):
         self.pwm.stop()
-        GPIO.cleanup()
-        self.serial_port.close()
