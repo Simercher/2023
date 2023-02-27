@@ -117,7 +117,7 @@ def main(img):
     turn = int((right_deviation + left_deviation) / 2)
     cv2.line(img, (320, 400), (turn, 400), (255,0,0),3)
 
-    return img, map(turn), c
+    return img, map(turn)
 
 cap = cv2.VideoCapture(-1)
 width = 480
@@ -137,12 +137,12 @@ pre_turn = 0
 #os.system(f"rm -rf ./photo/{clip}")
 #os.system(f"mkdir ./photo/{clip}")
 start = end = time.time()
-serial_port.write('170&170\n'.encode())
-while end - start < 0.5:
+#serial_port.write('170&170\n'.encode())
+while True:
     ret, frame = cap.read()
     if ret:
         frame1 = frame.copy()
-        frame1, turn, c = main(frame1)
+        frame1, turn = main(frame1)
         print(c)
         cv2.imshow('video',frame1)
         try:
