@@ -1,5 +1,4 @@
 import Jetson.GPIO as GPIO
-import serial
 from PID_VelocityControl import PID_VelocityControl
 
 class Motor():
@@ -14,9 +13,9 @@ class Motor():
         self.pwm.start(0)
         self.encoder = 0
         self.velocity = 0
-    def setSpeed(self, encoder):
+    def setSpeed(self, encoder, target):
         self.encoder = encoder
-        self.pid.calPID(100, self.encoder)
+        self.pid.calPID(target=target, encoder = self.encoder)
         self.velocity = self.pid.setVelocity()
         self.pwm.ChangeDutyCycle(self.velocity)
     def __del__(self):
