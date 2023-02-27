@@ -5,6 +5,7 @@ import cv2
 import serial
 import time
 import threading
+import Jetson.GPIO as GPIO
 from Motor import Motor
 
 serial_port = serial.Serial(
@@ -26,7 +27,7 @@ def rMotor():
     motor = Motor(Pins = pins)
     try:
         while not flag:
-            motor.setSpeed(R_encoder, )
+            motor.setSpeed(R_encoder, r_speed)
             #print("rr")
         print("r close")
     finally:
@@ -41,7 +42,7 @@ def lMotor():
     motor = Motor(Pins = pins)
     try:
         while not flag:
-            motor.setSpeed(L_encoder)
+            motor.setSpeed(L_encoder, l_speed)
             #print("ll")
         print("l close")
     finally:
@@ -86,13 +87,24 @@ def cv(img):
     
     left_deviation1 = 0
     for i in range(300,0,-1):
-        if (img[300][i] == 255):
+        if (img[250][i] == 255):
             left_deviation1 = i
             break
     right_deviation1 = 640
     for i in range(340,640):
-        if (img[300][i] == 255):
+        if (img[250][i] == 255):
             right_deviation1 = i
+            break
+
+    left_deviation2 = 0
+    for i in range(300,0,-1):
+        if (img[320][i] == 255):
+            left_deviation2 = i
+            break
+    right_deviation2 = 640
+    for i in range(340,640):
+        if (img[320][i] == 255):
+            right_deviation2 = i
             break
 
     vertical_deviation = 0
@@ -103,13 +115,15 @@ def cv(img):
 
     img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     cv2.line(img, (300, vertical_deviation), (340, vertical_deviation), (0,0,255),3)
-    cv2.line(img, (int(left_deviation1), 280), (int(left_deviation1), 320), (0,0,255),3)
-    cv2.line(img, (int(right_deviation1), 280), (int(right_deviation1), 320), (0,0,255),3)
+    cv2.line(img, (int(left_deviation2), 300), (int(left_deviation2), 340), (0,0,255),3)
+    cv2.line(img, (int(right_deviation2), 300), (int(right_deviation2), 340), (0,0,255),3)
     cv2.line(img, (int(left_deviation), 180), (int(left_deviation), 220), (0,0,255),3)
     cv2.line(img, (int(right_deviation), 180), (int(right_deviation), 220), (0,0,255),3)
+    cv2.line(img, (int(left_deviation), 230), (int(left_deviation), 270), (0,0,255),3)
+    cv2.line(img, (int(right_deviation), 230), (int(right_deviation), 270), (0,0,255),3)
     a = right_deviation + left_deviation
     b = right_deviation1 + left_deviation1
-    c = vertical_deviation
+    c = right_deviation2 + left_deviation2
     #print(c)
     #if c > 0:
     if not a / 2  > 320 and b / 2 > 320:
@@ -117,8 +131,12 @@ def cv(img):
     elif not a / 2 < 320 and b / 2 < 320:
         b -= 320
         turn = int((a * 0 + b * 2)/ 2)
+    elif not b / 2  > 320 and c / 2 > 320:
+       turn = int((a * 0 + c * 2)/1 / 2)
+    elif not b / 2 < 320 and c / 2 < 320:
+        c -= 320
+        turn = int((a * 0 + c * 2)/ 2)
     else:
-        print(1)
         turn = int((a * 1 + b * 0)/1 / 2)
     # else:
     #    turn = 320
@@ -150,26 +168,27 @@ def main():
                 frame1, turn = cv(frame1)
                 cv2.imshow('video',frame1)
                 try:
-                    serial_port.open()
-                    if turn >= 20:
-                        turn = 35
-                    elif turn <= -20:
-                        turn = -35
+                    #serial_port.open()
+                    if turn >= 30:
+                        turn = 37
+                    elif turn <= -30:
+                        turn = -37
+                    print(turn)
                     msg = serial_port.read_all()
                     if msg:
                         msgs = msg.decode().split()
                         R_encoder = int(msgs[0])
                         L_encoder = int(msgs[1])
-                        print(msgs)
+                        #print(msgs)
                     if turn < 0:	
-                            r_speed = 70
-                            l_speed = 70 + turn
+                            r_speed = 75
+                            l_speed = 75 + turn
                     elif turn > 0:
-                        r_speed = 70 - turn
-                        l_speed = 70
+                        r_speed = 75 - turn
+                        l_speed = 75
                     else:
-                        r_speed = 70
-                        l_speed = 70
+                        r_speed = 75
+                        l_speed = 75
                 except serial.SerialException as e:
                     print(e)
                 except KeyboardInterrupt:
@@ -178,16 +197,17 @@ def main():
                 except Exception as exception_error:
                     print("Error occurred. Exiting Program")
                     print("Error: " + str(exception_error))
-                finally:
-                    pass
             else:
+                flag = True
                 break
             if cv2.waitKey(10) == ord('q'):
+                flag = True
                 break
         serial_port.close()
         cap.release()
         cv2.destroyAllWindows()
     finally:
+        flag = True
         r.join()
         l.join()
         print(flag)
